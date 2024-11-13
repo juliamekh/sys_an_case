@@ -1,0 +1,242 @@
+openapi: 3.0.0
+info:
+  title: Payment Blocking Service API
+  description: API для управления блокировками платежей для юридических лиц.
+  version: 1.0.0
+paths:
+  /clients/{clientId}/block:
+    post:
+      summary: Блокировка платежей клиента
+      description: Блокирует платежи для указанного клиента, с указанием причины.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: [fraud_suspicion, incorrect_details]
+                  description: Причина блокировки (подозрение на мошенничество или некорректные реквизиты)
+      responses:
+        '200':
+          description: Клиент успешно заблокирован
+        '400':
+          description: Некорректный запрос
+  /clients/{clientId}/unblock:
+    post:
+      summary: Разблокировка платежей клиента
+      description: Снимает блокировку платежей для указанного клиента.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      responses:
+        '200':
+          description: Клиент успешно разблокирован
+        '404':
+          description: Клиент не найден
+  /clients/{clientId}/status:
+    get:
+      summary: Проверка статуса блокировки клиента
+      description: Возвращает статус блокировки клиента и его юридические данные.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      responses:
+        '200':
+          description: Статус блокировки и юридические данные клиента
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isBlocked:
+                    type: boolean
+                    description: Статус блокировки
+                  reason:
+                    type: string
+                    description: Причина блокировки, если клиент заблокирован
+                  inn:
+                    type: string
+                    description: ИНН юридического лица
+                  kpp:
+                    type: string
+                    description: КПП юридического лица
+                  bank_account:
+                    type: string
+                    description: Расчетный счет юридического лица
+                  bank_name:
+                    type: string
+                    description: Банк юридического лица
+                  bank_bik:
+                    type: string
+                    description: БИК банка юридического лица
+        '404':
+          description: Клиент не найден
+  /clients/blocked:
+    get:
+      summary: Получение списка заблокированных клиентов
+      description: Возвращает список всех заблокированных клиентов с указанием причин.
+      responses:
+        '200':
+          description: Список заблокированных клиентов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    clientId:
+                      type: string
+                      description: Уникальный идентификатор клиента
+                    reason:
+                      type: string
+                      description: Причина блокировки
+  /clients/{clientId}/block-temporarily:
+    post:
+      summary: Временная блокировка платежей клиента
+      description: Блокирует платежи клиента на заданный период.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: [fraud_suspicion, incorrect_details]
+                  description: Причина временной блокировки
+                duration:
+                  type: integer
+                  description: Продолжительность блокировки в днях
+      responses:
+        '200':
+          description: Клиент успешно временно заблокирован
+        '400':
+          description: Некорректный запрос
+  /clients/{clientId}/block-extend:
+    post:
+      summary: Продление блокировки клиента
+      description: Продлевает текущую блокировку клиента на указанный период.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                additional_duration:
+                  type: integer
+                  description: Дополнительные дни для продления блокировки
+      responses:
+        '200':
+          description: Блокировка успешно продлена
+        '404':
+          description: Клиент или блокировка не найдены
+  /clients/{clientId}/block-reason:
+    patch:
+      summary: Изменение причины блокировки клиента
+      description: Обновляет причину текущей блокировки клиента.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: [fraud_suspicion, incorrect_details]
+                  description: Новая причина блокировки
+      responses:
+        '200':
+          description: Причина блокировки клиента успешно обновлена
+        '404':
+          description: Клиент не найден или блокировка отсутствует
+  /clients/block-history:
+    get:
+      summary: История блокировок клиентов
+      description: Возвращает историю всех блокировок клиентов, включая даты блокировки и разблокировки.
+      responses:
+        '200':
+          description: История блокировок клиентов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    clientId:
+                      type: string
+                      description: Уникальный идентификатор клиента
+                    blockTimestamp:
+                      type: string
+                      format: date-time
+                      description: Дата и время блокировки
+                    unblockTimestamp:
+                      type: string
+                      format: date-time
+                      description: Дата и время разблокировки
+                    reason:
+                      type: string
+                      description: Причина блокировки
+                    status:
+                      type: string
+                      enum: [active, released]
+                      description: Текущий статус блокировки
+  /clients/{clientId}/block-review:
+    post:
+      summary: Запрос на пересмотр блокировки
+      description: Создает запрос на пересмотр текущей блокировки клиента.
+      parameters:
+        - in: path
+          name: clientId
+          schema:
+            type: string
+          required: true
+          description: Уникальный идентификатор клиента
+      responses:
+        '200':
+          description: Запрос на пересмотр успешно создан
+        '404':
+          description: Клиент не найден или блокировка отсутствует
